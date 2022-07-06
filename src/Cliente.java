@@ -2,6 +2,8 @@ import java.io.*;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
+import java.util.Arrays;
+
 import stind.*;
 
 public class Cliente
@@ -17,9 +19,13 @@ public class Cliente
 
     public void send_message(String message) throws IOException {
         OutputStream output = client_socket.getOutputStream();
-        PrintWriter writer = new PrintWriter(output, true);
+        PrintWriter writer = new PrintWriter(output, false);
 
+        writer.print((Integer) 0);
+        writer.print((Integer) message.getBytes().length);
         writer.println(message);
+
+        writer.flush();
 
         InputStream input = client_socket.getInputStream();
         BufferedReader reader = new BufferedReader( new InputStreamReader(input) );

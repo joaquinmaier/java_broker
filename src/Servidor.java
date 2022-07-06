@@ -45,9 +45,9 @@ public class Servidor
     private ServerSocket server_socket;
     private ThreadPool thread_pool;
 
-    public Servidor() throws IOException {
+    public Servidor(int threads) throws IOException {
         this.server_socket = new ServerSocket(8081);
-        this.thread_pool = new ThreadPool(32);
+        this.thread_pool = new ThreadPool(threads);
         System.out.println("Server ready!");
 
     }

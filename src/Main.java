@@ -8,7 +8,7 @@ public class Main
         STIND stind = new STIND(System.in);
 
         if (args[0].equals("--server")) {
-            Servidor server = new Servidor();
+            Servidor server = new Servidor(2);
 
             server.listen();
         }
