@@ -1,0 +1,7 @@
+{
+    "workbench.colorTheme": "Tokyo Night",
+    "editor.cursorBlinking": "expand",
+    "editor.cursorSmoothCaretAnimation": true,
+    "git.confirmSync": false,
+    "java.project.outputPath": "out/production/vscode/"
+}

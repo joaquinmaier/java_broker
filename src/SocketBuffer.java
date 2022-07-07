@@ -1,51 +1,102 @@
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
-public class SocketBuffer
+public class SocketBuffer implements Iterable<Socket>
 {
     private ReentrantLock       socket_lock;
     private ArrayList<Socket>   sockets;
-    private AtomicBoolean       has_items;
+    private Condition           condition_available;
+    private Condition           condition_hasitems;
+    private AtomicBoolean       available;
 
     public SocketBuffer() {
-        this.socket_lock    = new ReentrantLock();
-        this.sockets        = new ArrayList<>();
-        this.has_items      = new AtomicBoolean(false);
+        this.socket_lock            = new ReentrantLock();
+        this.sockets                = new ArrayList<>();
+        this.available              = new AtomicBoolean(true);
+        this.condition_available    = socket_lock.newCondition();
+        this.condition_hasitems     = socket_lock.newCondition();
     }
 
-    public final ArrayList<Socket> get_sockets() { return sockets; }
+    public boolean has_items()          { return sockets.size() > 0; }
 
-    public AtomicBoolean has_items() {
-        return this.has_items;
+    public Iterator<Socket> iterator()  { return new SocketBufferIterator(); }
+
+    public int size()                   { return this.sockets.size(); }
+
+    private Socket get(int i)           { return this.sockets.get(i); }
+
+    private void acquireLock() 
+    {
+        this.socket_lock.lock();
+        this.available.set(false);
     }
 
-    public Socket get_socket() {
-        socket_lock.lock();
+    public void freeLock() 
+    {
+        this.socket_lock.unlock();
+        this.available.set(true);
+    }
 
-        if (this.has_items.get()) {
-            Socket s = this.sockets.get( this.sockets.size() - 1 );
-            this.sockets.remove(this.sockets.size() - 1);
+    public final ReentrantLock getLock() { return this.socket_lock; }
 
-            if (this.sockets.isEmpty())
-                this.has_items.set(false);
+    // Waits for the lock to be available, and gets it.
+    public void waitForLock() 
+    {
+        while (!available.get()) {
+            try {
+                condition_available.await();
 
-            return s;
+            } catch (InterruptedException e) { e.printStackTrace(); }
         }
 
-        socket_lock.unlock();
-
-        return null;
+        acquireLock();
+        condition_available.signal();    
     }
 
-    public void add_socket(Socket socket) {
-        socket_lock.lock();
+    // Waits for there to be items in the buffer
+    public void waitForItems()
+    {
+        while (sockets.size() == 0) {
+            try {
+                condition_hasitems.await();
 
-        this.sockets.add(socket);
+            } catch (InterruptedException e) { e.printStackTrace(); }
+        }
 
-        if (!this.has_items.get()) this.has_items.set(true);
+        condition_hasitems.signal();
+    }
 
-        socket_lock.unlock();
+    public void add(Socket s) {
+        if (socket_lock.isHeldByCurrentThread()) {
+            this.sockets.add(s);
+
+        }
+    }
+
+    public void remove(Socket s) {
+        if (socket_lock.isHeldByCurrentThread()) {
+            this.sockets.remove(s);
+
+        }
+    }
+
+    // Iterator type
+    public class SocketBufferIterator implements Iterator<Socket>
+    {
+        private int index = 0;
+
+        public boolean hasNext() { return index < size(); }
+
+        public Socket next() {
+            return get(index++);
+        }
+
+        public void remove() {
+            throw new UnsupportedOperationException("Not supported yet!");
+        }
     }
 }
