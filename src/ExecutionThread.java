@@ -31,6 +31,7 @@ public class ExecutionThread extends Thread
 
     public void quit() {
         this.running    = false;
+        try { this.socket.close(); } catch (IOException e) { e.printStackTrace(); }
     }
 
     public void run() {
