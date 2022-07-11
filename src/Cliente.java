@@ -22,6 +22,7 @@ public class Cliente
             listener.request_socket();
 
             client_socket.waitForLock();
+            System.out.println("Got socket lock");
         }
 
         OutputStream output = client_socket.get().getOutputStream();
@@ -35,7 +36,7 @@ public class Cliente
 
     public void close() throws IOException { 
         listener.quit();
-        try { listener.join(); } catch (InterruptedException e) { e.printStackTrace(); }
+        listener.interrupt();
 
         client_socket.waitForLock();
         client_socket.close();

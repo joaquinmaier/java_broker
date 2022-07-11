@@ -22,6 +22,8 @@ public class Servidor
 
             thread_pool.add_socket(socket);
 
+            System.out.println("SOCKET DISPATCHED");
+
         } catch (IOException e) {
             System.err.printf("IOException occurred creating socket: %s", e.getMessage());
             return;

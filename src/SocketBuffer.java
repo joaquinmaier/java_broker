@@ -46,15 +46,7 @@ public class SocketBuffer implements Iterable<Socket>
     // Waits for the lock to be available, and gets it.
     public void waitForLock() 
     {
-        while (!available.get()) {
-            try {
-                condition_available.await();
-
-            } catch (InterruptedException e) { e.printStackTrace(); }
-        }
-
-        acquireLock();
-        condition_available.signal();    
+        acquireLock(); 
     }
 
     // Waits for there to be items in the buffer
@@ -73,6 +65,7 @@ public class SocketBuffer implements Iterable<Socket>
     public void add(Socket s) {
         if (socket_lock.isHeldByCurrentThread()) {
             this.sockets.add(s);
+            System.out.printf("Has Items: %b\n", this.has_items());
 
         }
     }

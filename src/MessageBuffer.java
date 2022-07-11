@@ -45,16 +45,7 @@ public class MessageBuffer implements Iterable<ServerMessage>
     // Waits for the lock to be available, and gets it.
     public void waitForLock() 
     {
-        while (!available.get()) {
-            try {
-                condition_available.await();
-
-            } catch (InterruptedException e) { e.printStackTrace(); }
-        }
-
-        lock.lock();
-        acquireLock();
-        condition_available.signal();    
+        acquireLock();  
     }
 
     // Waits for there to be items in the buffer

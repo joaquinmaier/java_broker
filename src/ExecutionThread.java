@@ -82,5 +82,6 @@ public class ExecutionThread extends Thread
         }
 
         if (!running) try { socket.close(); } catch (IOException e) { e.printStackTrace(); };
+        if (socket.isClosed()) { System.out.printf("Socket was closed -- %d", Thread.currentThread().getId()); }
     }
 }

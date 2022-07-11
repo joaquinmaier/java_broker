@@ -24,6 +24,7 @@ public class ThreadPool extends Thread
     }
 
     public void handle_sockets() {
+        System.out.println("\033[0;33mHANDLING SOCKETS\033[0m");
         for (Socket s : sockets) {
             this.threads.add( new ExecutionThread(s, new AtomicReference<>(this)) );
             this.threads.get( this.threads.size() - 1 ).start();
@@ -39,10 +40,7 @@ public class ThreadPool extends Thread
                 case 0x00:
                     // ! 0x00 => The socket is closed, destroy the thread.
                     // Convert the associated data (the thread_id) to a long
-                    Long thread_id = ByteBuffer.allocate(Long.BYTES)
-                                        .put( ServerMessage.get_byte_array(msg.associated_data) )
-                                        .flip()
-                                        .getLong();
+                    final Long thread_id = msg.sender;
 
                     // Kill the thread
                     for (ExecutionThread thread : threads) {
@@ -50,6 +48,7 @@ public class ThreadPool extends Thread
                             thread.quit();
                             thread.interrupt();
                             threads.remove(thread);
+                            break;
                         }
                     }
                     break;
@@ -60,10 +59,7 @@ public class ThreadPool extends Thread
                     // message to their respective sockets
                     
 
-                    Long tid = ByteBuffer.allocate(Long.BYTES)
-                                        .put( ServerMessage.get_byte_array(msg.associated_data) )
-                                        .flip()
-                                        .getLong();
+                    final Long tid = msg.sender;
 
                     // ? 0x02 => Send this message to the client
                     ServerMessage modified_msg = new ServerMessage((byte) 0x02, msg.sender, msg.associated_data);
@@ -94,6 +90,7 @@ public class ThreadPool extends Thread
 
         while (running) {
             if (this.sockets.has_items()) {
+                System.out.printf("Sockets has items: %b\n", this.sockets.has_items());
                 this.sockets.waitForLock();     // Get the lock
 
                 this.handle_sockets();          // Handle the sockets in the buffer
