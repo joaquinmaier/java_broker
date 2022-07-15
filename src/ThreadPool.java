@@ -57,6 +57,7 @@ public class ThreadPool extends Thread
                             thread.quit();
                             thread.interrupt();
                             threads.remove(thread);
+                            break;
                         }
                     }
 

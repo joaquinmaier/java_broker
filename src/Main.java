@@ -22,15 +22,15 @@ public class Main
             Cliente client = new Cliente(stind);
 
             String message = "";
-            while (true) {
+            boolean running = true;
+            while (running) {
+                System.out.print("Message: ");
                 message = stind.read_line().unwrap_or( Throwable::printStackTrace );
 
-                if (message.equals(".exit")) break;
+                if (message.equals(".exit")) { running = false; continue; }
 
                 client.send_message(message);
             }
-            
-            
 
             client.close();
         }

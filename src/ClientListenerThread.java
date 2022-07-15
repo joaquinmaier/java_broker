@@ -32,7 +32,22 @@ public class ClientListenerThread extends Thread
         this.running = true;
         this.socket_reference.get().take(thread_id);
 
+        System.out.println("\033[0;31mClientListenerThread Running\033[0m");
+
         while (running) {
+            try {
+                if (socket_reference.get().get().getInputStream().available() > 0) {
+                    BufferedReader reader = new BufferedReader( new InputStreamReader(socket_reference.get().get().getInputStream()) );
+
+                    String message = reader.readLine();
+                    System.out.println(message);
+
+                }
+
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
             if (messages.has_items()) {
                 messages.reject_new_messages();
 

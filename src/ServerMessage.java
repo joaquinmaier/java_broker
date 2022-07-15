@@ -18,12 +18,13 @@ public class ServerMessage
     }
 
     public static byte[] get_byte_array(ArrayList<Byte> ba) {
-        Byte[] Byte_data = new Byte[ba.size()];
+        System.out.printf("Converting: %s\n", ba.toString());
+
         byte[] byte_data = new byte[ba.size()];
 
-        int i = 0;
-        for (Byte b : Byte_data) {
-            byte_data[i++] = b.byteValue();
+        for (int i = 0; i < ba.size(); i++) {
+            System.out.printf("i = %d, value = %c\n", i, (char)ba.get(i).byteValue());
+            byte_data[i] = ba.get(i).byteValue();
         }
 
         return byte_data;

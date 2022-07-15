@@ -25,6 +25,8 @@ public class Servidor
 
             System.out.println("\033[0;32mConfirmation should be on it's way\033[0m");
 
+            System.out.println("SOCKET DISPATCHED");
+
         } catch (IOException e) {
             System.err.printf("IOException occurred creating socket: %s", e.getMessage());
             return;

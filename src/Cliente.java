@@ -35,7 +35,7 @@ public class Cliente
 
     public void close() throws IOException { 
         listener.quit();
-        try { listener.join(); } catch (InterruptedException e) { e.printStackTrace(); }
+        listener.interrupt();
 
         client_socket.take(thread_id);
         client_socket.close();
