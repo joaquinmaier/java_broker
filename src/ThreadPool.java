@@ -1,5 +1,5 @@
+import java.io.IOException;
 import java.net.Socket;
-import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -18,60 +18,71 @@ public class ThreadPool extends Thread
     }
 
     public void add_socket(Socket socket) {
-        this.sockets.waitForLock();
         this.sockets.add(socket);
-        this.sockets.freeLock();
     }
 
+    public void send_confirmation() { this.messages.add(new ServerMessage((byte)0x01, "main", "Hello from the server!")); }
+
     public void handle_sockets() {
+        this.sockets.reject_new_sockets();
+
         for (Socket s : sockets) {
-            this.threads.add( new ExecutionThread(s, new AtomicReference<>(this)) );
-            this.threads.get( this.threads.size() - 1 ).start();
-            sockets.remove(s);
+            try {
+                ExecutionThread new_thread = new ExecutionThread(s, new AtomicReference<>(this));
+                this.threads.add(new_thread);
+                this.threads.get( this.threads.indexOf(new_thread) ).start();
+                sockets.remove(s);
+
+            } catch (IOException e) { e.printStackTrace(); }
 
         }
+
+        this.sockets.accept_new_sockets();
     }
 
     public void handle_messages() {
+        if (sockets.size() > 0) return;     // Sockets must be handled before messages
+
+        messages.reject_new_messages();
         for (ServerMessage msg : messages) {
             switch (msg.message) 
             {
                 case 0x00:
-                    // ! 0x00 => The socket is closed, destroy the thread.
-                    // Convert the associated data (the thread_id) to a long
-                    Long thread_id = ByteBuffer.allocate(Long.BYTES)
-                                        .put( ServerMessage.get_byte_array(msg.associated_data) )
-                                        .flip()
-                                        .getLong();
+                    // ? 0x00 => The socket is closed, destroy the thread.
+                    String c_id = msg.sender;
 
                     // Kill the thread
                     for (ExecutionThread thread : threads) {
-                        if (thread.thread_id == thread_id) {
+                        if (thread.client_id == c_id) {
                             thread.quit();
                             thread.interrupt();
                             threads.remove(thread);
                         }
                     }
+
+                    this.messages.remove(msg);
                     break;
                 
                 case 0x01:
-                    // ! 0x01 => New message received, send it to other threads
+                    // ? 0x01 => New message received, send it to other threads
                     // Simply re-send the message to the other ExecutionThreads, they will send the
                     // message to their respective sockets
                     
+                    System.out.println("\033[0;33mGOT MESSAGE, RE-SENDING\033[0m");
 
-                    Long tid = ByteBuffer.allocate(Long.BYTES)
-                                        .put( ServerMessage.get_byte_array(msg.associated_data) )
-                                        .flip()
-                                        .getLong();
+                    String c_id2 = msg.sender;
 
                     // ? 0x02 => Send this message to the client
                     ServerMessage modified_msg = new ServerMessage((byte) 0x02, msg.sender, msg.associated_data);
 
                     for (ExecutionThread thread : threads) {
-                        if (thread.thread_id != tid) thread.send_message(modified_msg);
+                        if (thread.client_id != c_id2) thread.send_message(modified_msg);
 
                     }
+
+                    this.messages.remove(msg);
+
+                    System.out.println("\033[0;33mDONE\033[0m");
 
                     break;
 
@@ -79,13 +90,12 @@ public class ThreadPool extends Thread
                                         
             }
         }
+        messages.accept_new_messages();
     }
 
     public void send_message(ServerMessage msg)
     {
-        messages.waitForLock();
         messages.add(msg);
-        messages.freeLock();
     }
 
     // Logic of the ThreadPool
@@ -94,20 +104,13 @@ public class ThreadPool extends Thread
 
         while (running) {
             if (this.sockets.has_items()) {
-                this.sockets.waitForLock();     // Get the lock
-
-                this.handle_sockets();          // Handle the sockets in the buffer
-
-                this.sockets.freeLock();        // Free the lock
+                System.out.println("\033[0;33mHANDLING SOCKETS\033[0m");
+                this.handle_sockets();
 
             }
-
+            //* .
             if (this.messages.has_items()) {
-                this.messages.waitForLock();
-
                 this.handle_messages();
-
-                this.messages.freeLock();
 
             }
         }

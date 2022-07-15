@@ -7,18 +7,13 @@ import java.util.concurrent.locks.ReentrantLock;
 
 public class SocketBuffer implements Iterable<Socket>
 {
-    private ReentrantLock       socket_lock;
+    //private ReentrantLock       socket_lock;
     private ArrayList<Socket>   sockets;
-    private Condition           condition_available;
-    private Condition           condition_hasitems;
-    private AtomicBoolean       available;
+    private AtomicBoolean       reject_items;
 
     public SocketBuffer() {
-        this.socket_lock            = new ReentrantLock();
         this.sockets                = new ArrayList<>();
-        this.available              = new AtomicBoolean(true);
-        this.condition_available    = socket_lock.newCondition();
-        this.condition_hasitems     = socket_lock.newCondition();
+        this.reject_items           = new AtomicBoolean(false);
     }
 
     public boolean has_items()          { return sockets.size() > 0; }
@@ -29,60 +24,19 @@ public class SocketBuffer implements Iterable<Socket>
 
     private Socket get(int i)           { return this.sockets.get(i); }
 
-    private void acquireLock() 
-    {
-        this.socket_lock.lock();
-        this.available.set(false);
-    }
-
-    public void freeLock() 
-    {
-        this.socket_lock.unlock();
-        this.available.set(true);
-    }
-
-    public final ReentrantLock getLock() { return this.socket_lock; }
-
-    // Waits for the lock to be available, and gets it.
-    public void waitForLock() 
-    {
-        while (!available.get()) {
-            try {
-                condition_available.await();
-
-            } catch (InterruptedException e) { e.printStackTrace(); }
-        }
-
-        acquireLock();
-        condition_available.signal();    
-    }
-
-    // Waits for there to be items in the buffer
-    public void waitForItems()
-    {
-        while (sockets.size() == 0) {
-            try {
-                condition_hasitems.await();
-
-            } catch (InterruptedException e) { e.printStackTrace(); }
-        }
-
-        condition_hasitems.signal();
-    }
-
     public void add(Socket s) {
-        if (socket_lock.isHeldByCurrentThread()) {
-            this.sockets.add(s);
+        while (this.reject_items.get()) {}
 
-        }
+        this.sockets.add(s);
     }
 
     public void remove(Socket s) {
-        if (socket_lock.isHeldByCurrentThread()) {
-            this.sockets.remove(s);
-
-        }
+        this.sockets.remove(s);
     }
+
+    public void reject_new_sockets()    { this.reject_items.set(true); }
+
+    public void accept_new_sockets()    { this.reject_items.set(false); }
 
     // Iterator type
     public class SocketBufferIterator implements Iterator<Socket>

@@ -3,15 +3,15 @@ import java.util.ArrayList;
 public class ServerMessage 
 {
     Byte            message;
-    ArrayList<Byte> associated_data;
-    Long            sender;
+    String          associated_data;
+    String          sender;
 
-    public ServerMessage(byte msg, long sender) {
+    public ServerMessage(byte msg, String sender) {
         this.message = msg;
         this.sender = sender;
     }
 
-    public ServerMessage(byte msg, long sender, ArrayList<Byte> ad) {
+    public ServerMessage(byte msg, String sender, String ad) {
         this.message = msg;
         this.sender = sender;
         this.associated_data = ad;

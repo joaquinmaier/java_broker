@@ -1,80 +1,60 @@
 import java.io.IOException;
 import java.net.Socket;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.locks.Condition;
-import java.util.concurrent.locks.ReentrantLock;
 
 public class ClientSocket 
 {
-    private ReentrantLock lock;
-    private Socket socket;
-    private Condition condition_available;
-    private Condition condition_occupied;
-    private AtomicBoolean available;
+    private Socket          socket;
+    private AtomicBoolean   available;
+    private Long            owner_thread;
 
     public ClientSocket(String input_ip, int port) throws IOException {
-        this.socket = new Socket(input_ip, port);
-        this.lock = new ReentrantLock();
-        this.condition_available = lock.newCondition();
-        this.condition_occupied = lock.newCondition();
-        this.available = new AtomicBoolean(true);
+        this.socket         = new Socket(input_ip, port);
+        this.available      = new AtomicBoolean(true);
+        this.owner_thread   = (long) 0;
+    }
+
+    public final Long owner() { return owner_thread; }
+
+    public void take(Long thread_id) {
+        while (!available.get()) {}
+
+        this.available.set(false);
+        this.owner_thread = thread_id;
+
+    }
+
+    public boolean try_take(Long thread_id) {
+        if (!available.get()) return false;
+
+        this.available.set(false);
+        this.owner_thread = thread_id;
+
+        return true;
+    }
+
+    public void free(Long thread_id) {
+        if (this.owner_thread == thread_id) {
+            this.owner_thread = (long) 0;
+            this.available.set(true);
+
+        }
+    }
+
+    public void wait_for_occupation() {
+        while (available.get()) {}
     }
 
     public Socket get() {
-        if (lock.isHeldByCurrentThread()) {
-            return socket;
-
-        } else {
-            throw new RuntimeException("Thread does not own the lock");
-        }
+        return socket;
     }
 
     public void close() throws IOException {
-        if (lock.isHeldByCurrentThread()) {
-            socket.close();
-            this.available.set(false);
-
-        }
-    }
-
-    private void acquireLock() {
-        this.lock.lock();
-        this.available.set(false);
-    }
-
-    public void freeLock() {
-        this.lock.unlock();
-        this.available.set(true);
-    }
-
-    public void waitForLock() {
-        while (!available.get()) {
-            try {
-                condition_available.await();
-
-            } catch (InterruptedException e) { e.printStackTrace(); }
-        }
-
-        acquireLock();
-        condition_available.signal();
-    }
-
-    public void waitForOccupiedLock() {
-        while (available.get()) {
-            try {
-                condition_occupied.await();
-
-            } catch (InterruptedException e) { e.printStackTrace(); }
-        }
-
-        condition_occupied.signalAll();
+        socket.close();
     }
 
     public final boolean isAvailable() {
         return available.get();
     }
 
-    public final boolean isHeldByCurrentThread() {
-        return lock.isHeldByCurrentThread();
-    }
 }

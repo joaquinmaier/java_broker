@@ -6,8 +6,8 @@ public class Servidor
     private ServerSocket server_socket;
     private ThreadPool thread_pool;
 
-    public Servidor(int threads) throws IOException {
-        this.server_socket = new ServerSocket(8081);
+    public Servidor() throws IOException {
+        this.server_socket = new ServerSocket(8080);
         this.thread_pool = new ThreadPool();
         thread_pool.start();
         System.out.println("Server ready!");
@@ -21,6 +21,9 @@ public class Servidor
             System.out.println("SERVER GOT A NEW SOCKET!");
 
             thread_pool.add_socket(socket);
+            thread_pool.send_confirmation();
+
+            System.out.println("\033[0;32mConfirmation should be on it's way\033[0m");
 
         } catch (IOException e) {
             System.err.printf("IOException occurred creating socket: %s", e.getMessage());

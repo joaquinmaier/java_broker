@@ -4,29 +4,31 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
 
 public class ExecutionThread extends Thread
 {
     private volatile boolean            running;
     private Socket                      socket;
+    private BufferedReader              input;
+    private PrintWriter                 output;
     private AtomicReference<ThreadPool> parent;
     private MessageBuffer               messages;
-    public Long                         thread_id;
+    public String                       client_id;
 
-    public ExecutionThread(Socket s, AtomicReference<ThreadPool> p) {
+    public ExecutionThread(Socket s, AtomicReference<ThreadPool> p) throws IOException {
         this.socket     = s;
+        this.input      = new BufferedReader( new InputStreamReader( s.getInputStream() ) );
+        this.output     = new PrintWriter( s.getOutputStream() );
         this.parent     = p;
-        this.thread_id  = Thread.currentThread().getId();
+        this.client_id  = UUID.randomUUID().toString();
         this.messages   = new MessageBuffer();
 
-        System.out.printf("Thread %d in the game now baby\n", Thread.currentThread().getId());
     }
 
     public void send_message(ServerMessage msg) {
-        messages.waitForLock();
         messages.add(msg);
-        messages.freeLock();
     }
 
     public void quit() {
@@ -35,24 +37,20 @@ public class ExecutionThread extends Thread
     }
 
     public void run() {
+        System.out.println("\033[0;31mRUNNING\033[0m");
         this.running    = true;
         
         while (running && !socket.isClosed()) {
             // socket handling
             try {
-                
-                if (this.socket.getInputStream().available() > 0) {
-                    BufferedReader reader = new BufferedReader(new InputStreamReader(this.socket.getInputStream()));
+                if (this.input.ready()) {
+                    String received_message = this.input.readLine();
 
-                    String new_msg = reader.readLine();
-                    System.out.printf("Read: %s\n", new_msg);
+                    if (received_message == null) this.quit();
 
-                    ArrayList<Byte> associated_data = new ArrayList<>();
-                    for (char c : new_msg.toCharArray()) {
-                        associated_data.add((byte) c);
-                    }
+                    System.out.printf("Read: %s\n", received_message);
 
-                    parent.get().send_message( new ServerMessage( (byte) 0x01, Thread.currentThread().getId(), associated_data ) );
+                    parent.get().send_message(new ServerMessage((byte)0x01, this.client_id, received_message));
                 }
 
             } catch (IOException e) {
@@ -60,10 +58,12 @@ public class ExecutionThread extends Thread
             }
 
             if (messages.has_items()) {
-                messages.waitForLock();
+                messages.reject_new_messages();
 
                 for (ServerMessage sm : messages) {
                     if (sm.message == (byte) 0x02) {
+                        System.out.println("\033[0;31mGOT A MESSAGE TO SEND\033[0m");
+
                         try {
                             PrintWriter writer = new PrintWriter(this.socket.getOutputStream(), true);
 
@@ -71,16 +71,22 @@ public class ExecutionThread extends Thread
 
                         } catch (IOException e) { e.printStackTrace(); }
 
+                        System.out.println("\033[0;31mDONE\033[0m");
+
                     }
+
+                    this.messages.remove(sm);
 
                 }
 
-                messages.freeLock();
+                messages.accept_new_messages();
 
             }
             
         }
 
         if (!running) try { socket.close(); } catch (IOException e) { e.printStackTrace(); };
+
+        this.parent.get().send_message(new ServerMessage((byte)0x00, this.client_id));
     }
 }
