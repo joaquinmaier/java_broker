@@ -19,15 +19,15 @@ public class Main
             }
         }
         else if (args[0].equals("--client")) {
+            System.out.println("\033[0;35mCOMMANDS:\n    .exit -- Close the client\033[0m");
             Cliente client = new Cliente(stind);
 
             String message = "";
             boolean running = true;
             while (running) {
-                System.out.print("Message: ");
                 message = stind.read_line().unwrap_or( Throwable::printStackTrace );
 
-                if (message.equals(".exit")) { running = false; continue; }
+                if (message.equals(".exit")) { running = false;}
 
                 client.send_message(message);
             }

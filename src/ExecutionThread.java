@@ -3,7 +3,6 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
-import java.util.ArrayList;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -20,7 +19,7 @@ public class ExecutionThread extends Thread
     public ExecutionThread(Socket s, AtomicReference<ThreadPool> p) throws IOException {
         this.socket     = s;
         this.input      = new BufferedReader( new InputStreamReader( s.getInputStream() ) );
-        this.output     = new PrintWriter( s.getOutputStream() );
+        this.output     = new PrintWriter( s.getOutputStream(), true );
         this.parent     = p;
         this.client_id  = UUID.randomUUID().toString();
         this.messages   = new MessageBuffer();
@@ -47,6 +46,7 @@ public class ExecutionThread extends Thread
                     String received_message = this.input.readLine();
 
                     if (received_message == null) this.quit();
+                    if (received_message.equals(".exit")) { this.quit(); continue; }
 
                     System.out.printf("Read: %s\n", received_message);
 
@@ -64,12 +64,7 @@ public class ExecutionThread extends Thread
                     if (sm.message == (byte) 0x02) {
                         System.out.println("\033[0;31mGOT A MESSAGE TO SEND\033[0m");
 
-                        try {
-                            PrintWriter writer = new PrintWriter(this.socket.getOutputStream(), true);
-
-                            writer.println(sm.associated_data.toString());
-
-                        } catch (IOException e) { e.printStackTrace(); }
+                        output.printf("%s: %s\n", sm.sender, sm.associated_data);
 
                         System.out.println("\033[0;31mDONE\033[0m");
 
@@ -87,6 +82,7 @@ public class ExecutionThread extends Thread
 
         if (!running) try { socket.close(); } catch (IOException e) { e.printStackTrace(); };
 
+        System.out.println("\033[0;31mSENDING DESTROY MESSAGE\033[0m");
         this.parent.get().send_message(new ServerMessage((byte)0x00, this.client_id));
     }
 }

@@ -10,9 +10,12 @@ public class Cliente
     private Long                    thread_id;
 
     public Cliente(STIND stind) throws IOException {
-        this.client_socket = new ClientSocket("127.0.0.1", 8080);
-        this.thread_id = Thread.currentThread().getId();
-        try { this.listener = new ClientListenerThread(new AtomicReference<>(client_socket)); } catch (IOException e) { e.printStackTrace(); }
+        System.out.print("\033[0;32mIP: \033[0m");
+        String dest_ip = stind.read_line().unwrap_or( Throwable::printStackTrace );
+
+        this.client_socket          = new ClientSocket(dest_ip, 8081);
+        this.thread_id              = Thread.currentThread().getId();
+        try { this.listener         = new ClientListenerThread(new AtomicReference<>(client_socket)); } catch (IOException e) { e.printStackTrace(); }
         this.listener.start();
     }
 
@@ -20,12 +23,12 @@ public class Cliente
         if (!client_socket.isAvailable()) {
             listener.request_socket();
         }
-        System.out.println("\033[0;35mWaiting for socket\033[0m");
+        //System.out.println("\033[0;35mWaiting for socket\033[0m");
         client_socket.take(thread_id);
-        System.out.println("\033[0;35mGot Socket\033[0m");
+        //System.out.println("\033[0;35mGot Socket\033[0m");
 
-        OutputStream output = client_socket.get().getOutputStream();
-        PrintWriter writer = new PrintWriter(output, false);
+        OutputStream output         = client_socket.get().getOutputStream();
+        PrintWriter writer          = new PrintWriter(output, false);
 
         writer.println(message);
         writer.flush();
@@ -35,10 +38,9 @@ public class Cliente
 
     public void close() throws IOException { 
         listener.quit();
-        listener.interrupt();
+        try { listener.join(); } catch (InterruptedException e) { e.printStackTrace(); }
 
         client_socket.take(thread_id);
         client_socket.close();
-        client_socket.free(thread_id);
     }
 }

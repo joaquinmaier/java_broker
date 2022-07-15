@@ -21,7 +21,7 @@ public class ThreadPool extends Thread
         this.sockets.add(socket);
     }
 
-    public void send_confirmation() { this.messages.add(new ServerMessage((byte)0x01, "main", "Hello from the server!")); }
+    //public void send_confirmation() { this.messages.add(new ServerMessage((byte)0x01, "main", "Hello from the server!")); }
 
     public void handle_sockets() {
         this.sockets.reject_new_sockets();
@@ -31,6 +31,10 @@ public class ThreadPool extends Thread
                 ExecutionThread new_thread = new ExecutionThread(s, new AtomicReference<>(this));
                 this.threads.add(new_thread);
                 this.threads.get( this.threads.indexOf(new_thread) ).start();
+
+                String connected_message = "Client " + this.threads.get( this.threads.indexOf(new_thread) ).client_id + " connected!";
+                this.messages.add(new ServerMessage((byte)0x01, ":", connected_message));
+
                 sockets.remove(s);
 
             } catch (IOException e) { e.printStackTrace(); }
@@ -54,8 +58,10 @@ public class ThreadPool extends Thread
                     // Kill the thread
                     for (ExecutionThread thread : threads) {
                         if (thread.client_id == c_id) {
+                            System.out.println("\033[0;33mDESTROYING CHILD\033[0m");
                             thread.quit();
-                            thread.interrupt();
+                            try { thread.join(); } catch (InterruptedException e) {}
+
                             threads.remove(thread);
                             break;
                         }
@@ -122,7 +128,7 @@ public class ThreadPool extends Thread
 
         for (ExecutionThread t : threads) {
             t.quit();
-            try { t.join(); } catch (InterruptedException e) { e.printStackTrace(); }
+            try { t.join(); } catch (InterruptedException e) {}
         }
     }
 }
