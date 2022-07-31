@@ -28,11 +28,11 @@ public class UserColour
     }
 
     public String get_colour() {
-        return "\033[" + light_colour ? 1 : 0 + ";" + colour + "m";
+        return "\033[" + ( light_colour ? 1 : 0 ) + ";" + colour + "m";
     }
 
     @Override
     public String toString() {
-        return "\033[" + light_colour ? 1 : 0 + ";" + colour + "m";
+        return "\033[" + ( light_colour ? 1 : 0 ) + ";" + colour + "m";
     }
 }

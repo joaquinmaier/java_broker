@@ -33,7 +33,7 @@ public class ThreadPool extends Thread
                 this.threads.get( this.threads.indexOf(new_thread) ).start();
 
                 String connected_message = "Client " + this.threads.get( this.threads.indexOf(new_thread) ).client_id + " connected!";
-                this.messages.add(new ServerMessage((byte)0x01, ":", connected_message));
+                this.messages.add( new ServerMessage( (byte)0x01, "SERVER", ":", connected_message ) );
 
                 sockets.remove(s);
 
@@ -69,7 +69,7 @@ public class ThreadPool extends Thread
 
                     this.messages.remove(msg);
                     break;
-                
+
                 case 0x01:
                     // ? 0x01 => New message received, send it to other threads
                     // Simply re-send the message to the other ExecutionThreads, they will send the
@@ -80,7 +80,7 @@ public class ThreadPool extends Thread
                     String c_id2 = msg.sender;
 
                     // ? 0x02 => Send this message to the client
-                    ServerMessage modified_msg = new ServerMessage((byte) 0x02, msg.sender, msg.associated_data);
+                    ServerMessage modified_msg = new ServerMessage((byte) 0x02, msg.sender, msg.sender_username, msg.associated_data);
 
                     for (ExecutionThread thread : threads) {
                         if (thread.client_id != c_id2) thread.send_message(modified_msg);

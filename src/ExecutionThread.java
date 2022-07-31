@@ -6,8 +6,6 @@ import java.net.Socket;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
 
-// ! TO-DO: Each ExecutionThread now has a User, pass the username and the colouring information over to the other threads
-// ! when they send a message, as well as make sure the client updates the colour for itself as well, as it might not do it.
 public class ExecutionThread extends Thread
 {
     private volatile boolean            running;
@@ -42,7 +40,7 @@ public class ExecutionThread extends Thread
     public void run() {
         System.out.println("\033[0;31mRUNNING\033[0m");
         this.running    = true;
-        
+
         while (running && !socket.isClosed()) {
             // socket handling
             try {
@@ -51,11 +49,11 @@ public class ExecutionThread extends Thread
 
                     if (received_message == null)               { this.quit(); continue; }
                     if (received_message.equals(".exit"))       { this.quit(); continue; }
-                    if (received_message.startsWith(".user="))  { this.user.set_user_name( received_message.substring( received_message.indexOf('=') ) ); }
+                    if (received_message.startsWith(".user="))  { this.user.set_user_name( received_message.substring( received_message.indexOf('=') + 1 ) ); continue; }
 
                     System.out.printf("Read: %s\n", received_message);
 
-                    parent.get().send_message(new ServerMessage((byte)0x01, this.client_id, received_message));
+                    parent.get().send_message( new ServerMessage( (byte)0x01, this.client_id, this.user.get_formatted_username(), received_message ) );
                 }
 
             } catch (IOException e) {
@@ -69,7 +67,7 @@ public class ExecutionThread extends Thread
                     if (sm.message == (byte) 0x02) {
                         System.out.println("\033[0;31mGOT A MESSAGE TO SEND\033[0m");
 
-                        output.printf("%s: %s\n", sm.sender, sm.associated_data);
+                        output.printf("%s: %s\n", sm.sender_username, sm.associated_data);
 
                         System.out.println("\033[0;31mDONE\033[0m");
 
@@ -82,12 +80,12 @@ public class ExecutionThread extends Thread
                 messages.accept_new_messages();
 
             }
-            
+
         }
 
         if (!running) try { socket.close(); } catch (IOException e) { e.printStackTrace(); };
 
         System.out.println("\033[0;31mSENDING DESTROY MESSAGE\033[0m");
-        this.parent.get().send_message(new ServerMessage((byte)0x00, this.client_id));
+        this.parent.get().send_message( new ServerMessage( (byte)0x00, this.client_id ) );
     }
 }

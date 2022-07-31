@@ -7,6 +7,7 @@ public class Cliente
 {
     private ClientSocket            client_socket;
     private ClientListenerThread    listener;
+    private PrintWriter             writer;
     private Long                    thread_id;
 
     public Cliente(STIND stind) throws IOException {
@@ -14,6 +15,7 @@ public class Cliente
         String dest_ip = stind.read_line().unwrap_or( Throwable::printStackTrace );
 
         this.client_socket          = new ClientSocket(dest_ip, 8081);
+        this.writer                 = new PrintWriter( client_socket.get().getOutputStream(), false );
         this.thread_id              = Thread.currentThread().getId();
         try { this.listener         = new ClientListenerThread(new AtomicReference<>(client_socket)); } catch (IOException e) { e.printStackTrace(); }
         this.listener.start();
@@ -27,16 +29,13 @@ public class Cliente
         client_socket.take(thread_id);
         //System.out.println("\033[0;35mGot Socket\033[0m");
 
-        OutputStream output         = client_socket.get().getOutputStream();
-        PrintWriter writer          = new PrintWriter(output, false);
-
-        writer.println(message);
+        writer.println(message.trim());
         writer.flush();
 
         client_socket.free(thread_id);
     }
 
-    public void close() throws IOException { 
+    public void close() throws IOException {
         listener.quit();
         try { listener.join(); } catch (InterruptedException e) { e.printStackTrace(); }
 

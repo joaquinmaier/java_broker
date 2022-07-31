@@ -4,7 +4,7 @@ public class ClientMessage extends ServerMessage {
         super(msg, sender);
     }
 
-    public ClientMessage(byte msg, String sender, String ad) {
-        super(msg, sender, ad);
+    public ClientMessage(byte msg, String sender, String sender_username, String ad) {
+        super(msg, sender, sender_username, ad);
     }
 }

@@ -35,8 +35,6 @@ public class ClientListenerThread extends Thread
         while (running) {
             try {
                 if (socket_reference.get().get().getInputStream().available() > 0) {
-                    BufferedReader reader   = new BufferedReader( new InputStreamReader(socket_reference.get().get().getInputStream()) );
-
                     String message          = reader.readLine();
                     System.out.println(message);
 
@@ -76,7 +74,7 @@ public class ClientListenerThread extends Thread
             } catch (IOException e) {
                 e.printStackTrace();
             }
-            
+
         }
     }
 }

@@ -3,7 +3,8 @@ import stind.STIND;
 import java.io.IOException;
 
 
-// ! TO-DO: Si el ClientListenerThread recibe o no el socket de nuevo es random, probablemente por un problema de concurrencia
+// ! TO-DO: When defining your username, spaces seem to soft-lock the client.
+// ! TO-DO: The client sometimes stops receiving messages out of nowhere. Might be a concurrency problem?
 public class Main
 {
     public static void main(String[] args) throws IOException {
@@ -19,7 +20,7 @@ public class Main
             }
         }
         else if (args[0].equals("--client")) {
-            System.out.println("\033[0;35mCOMMANDS:\n    .exit -- Close the client\033[0m");
+            System.out.println("\033[0;35mCOMMANDS:\n    .exit -- Close the client\n    .user=[username] -- Change your username (no spaces!)\033[0m");
             Cliente client = new Cliente(stind);
 
             String message = "";
