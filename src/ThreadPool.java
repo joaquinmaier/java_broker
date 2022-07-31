@@ -49,7 +49,7 @@ public class ThreadPool extends Thread
 
         messages.reject_new_messages();
         for (ServerMessage msg : messages) {
-            switch (msg.message) 
+            switch (msg.message)
             {
                 case 0x00:
                     // ? 0x00 => The socket is closed, destroy the thread.
@@ -74,7 +74,7 @@ public class ThreadPool extends Thread
                     // ? 0x01 => New message received, send it to other threads
                     // Simply re-send the message to the other ExecutionThreads, they will send the
                     // message to their respective sockets
-                    
+
                     System.out.println("\033[0;33mGOT MESSAGE, RE-SENDING\033[0m");
 
                     String c_id2 = msg.sender;
@@ -94,7 +94,7 @@ public class ThreadPool extends Thread
                     break;
 
                 default: break;
-                                        
+
             }
         }
         messages.accept_new_messages();

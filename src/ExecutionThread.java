@@ -6,6 +6,8 @@ import java.net.Socket;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
 
+// ! TO-DO: Each ExecutionThread now has a User, pass the username and the colouring information over to the other threads
+// ! when they send a message, as well as make sure the client updates the colour for itself as well, as it might not do it.
 public class ExecutionThread extends Thread
 {
     private volatile boolean            running;
@@ -14,7 +16,8 @@ public class ExecutionThread extends Thread
     private PrintWriter                 output;
     private AtomicReference<ThreadPool> parent;
     private MessageBuffer               messages;
-    public String                       client_id;
+    private User                        user;
+    public final String                 client_id;
 
     public ExecutionThread(Socket s, AtomicReference<ThreadPool> p) throws IOException {
         this.socket     = s;
@@ -22,6 +25,7 @@ public class ExecutionThread extends Thread
         this.output     = new PrintWriter( s.getOutputStream(), true );
         this.parent     = p;
         this.client_id  = UUID.randomUUID().toString();
+        this.user       = new User( client_id );
         this.messages   = new MessageBuffer();
 
     }
@@ -45,8 +49,9 @@ public class ExecutionThread extends Thread
                 if (this.input.ready()) {
                     String received_message = this.input.readLine();
 
-                    if (received_message == null) this.quit();
-                    if (received_message.equals(".exit")) { this.quit(); continue; }
+                    if (received_message == null)               { this.quit(); continue; }
+                    if (received_message.equals(".exit"))       { this.quit(); continue; }
+                    if (received_message.startsWith(".user="))  { this.user.set_user_name( received_message.substring( received_message.indexOf('=') ) ); }
 
                     System.out.printf("Read: %s\n", received_message);
 
