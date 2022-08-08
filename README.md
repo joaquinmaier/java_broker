@@ -4,11 +4,13 @@ Simple broker proof-of-concept using sockets and Java for my Networking class.
 
 ## How to use
 
-To run the **server**:
+First, to compile the program, run `make` or `make compile`.
+
+Then to run the **server**:
 
 ```make run-server```
 
-To run a **client**:
+Or, to run a **client**:
 
 ```make run-client```
 
