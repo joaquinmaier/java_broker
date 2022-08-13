@@ -3,8 +3,9 @@ import stind.STIND;
 import java.io.IOException;
 
 
-// ! TO-DO: When defining your username, spaces seem to soft-lock the client.
-// ! TO-DO: The client sometimes stops receiving messages out of nowhere. Might be a concurrency problem?
+// ! TO-DO: The client WAY TOO OFTEN stops receiving messages out of nowhere. Might be a concurrency problem?
+// ! TO-DO: Clients do not close down when the program crashes, etc. Allow ExecutionThreads to be automatically deleted after some time.
+// ! TO-DO: Wayy too much consumption by the server, probably caused by having a ton of threads executing at the same time. Look into optimization
 public class Main
 {
     public static void main(String[] args) throws IOException {
